@@ -23,6 +23,12 @@ from .alpha_vantage import (
     get_global_news as get_alpha_vantage_global_news,
 )
 from .alpha_vantage_common import AlphaVantageRateLimitError
+from .crypto_fetcher import (
+    get_crypto_perpetual_data,
+    get_crypto_funding_rate,
+    get_crypto_open_interest,
+    get_crypto_market_ticker,
+)
 
 # Configuration and routing logic
 from .config import get_config
@@ -33,6 +39,15 @@ TOOLS_CATEGORIES = {
         "description": "OHLCV stock price data",
         "tools": [
             "get_stock_data"
+        ]
+    },
+    "crypto_data": {
+        "description": "Cryptocurrency perpetual swap market data",
+        "tools": [
+            "get_crypto_perpetual_data",
+            "get_crypto_funding_rate",
+            "get_crypto_open_interest",
+            "get_crypto_market_ticker",
         ]
     },
     "technical_indicators": {
@@ -63,6 +78,7 @@ TOOLS_CATEGORIES = {
 VENDOR_LIST = [
     "yfinance",
     "alpha_vantage",
+    "crypto_fetcher",
 ]
 
 # Mapping of methods to their vendor-specific implementations
@@ -106,6 +122,19 @@ VENDOR_METHODS = {
     "get_insider_transactions": {
         "alpha_vantage": get_alpha_vantage_insider_transactions,
         "yfinance": get_yfinance_insider_transactions,
+    },
+    # crypto_data
+    "get_crypto_perpetual_data": {
+        "crypto_fetcher": get_crypto_perpetual_data,
+    },
+    "get_crypto_funding_rate": {
+        "crypto_fetcher": get_crypto_funding_rate,
+    },
+    "get_crypto_open_interest": {
+        "crypto_fetcher": get_crypto_open_interest,
+    },
+    "get_crypto_market_ticker": {
+        "crypto_fetcher": get_crypto_market_ticker,
     },
 }
 

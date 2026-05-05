@@ -1,12 +1,18 @@
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from tradingagents.agents.utils.agent_utils import (
     build_instrument_context,
+    build_crypto_context,
     get_balance_sheet,
     get_cashflow,
     get_fundamentals,
     get_income_statement,
     get_insider_transactions,
     get_language_instruction,
+    is_crypto_symbol,
+    get_crypto_price_data,
+    get_crypto_market_data,
+    get_funding_rate_analysis,
+    get_liquidation_levels,
 )
 from tradingagents.dataflows.config import get_config
 
@@ -14,21 +20,62 @@ from tradingagents.dataflows.config import get_config
 def create_fundamentals_analyst(llm):
     def fundamentals_analyst_node(state):
         current_date = state["trade_date"]
-        instrument_context = build_instrument_context(state["company_of_interest"])
+        ticker = state["company_of_interest"]
 
-        tools = [
-            get_fundamentals,
-            get_balance_sheet,
-            get_cashflow,
-            get_income_statement,
-        ]
+        # Detect whether to route to crypto or stock analysis
+        _is_crypto = is_crypto_symbol(ticker)
 
-        system_message = (
-            "You are a researcher tasked with analyzing fundamental information over the past week about a company. Please write a comprehensive report of the company's fundamental information such as financial documents, company profile, basic company financials, and company financial history to gain a full view of the company's fundamental information to inform traders. Make sure to include as much detail as possible. Provide specific, actionable insights with supporting evidence to help traders make informed decisions."
-            + " Make sure to append a Markdown table at the end of the report to organize key points in the report, organized and easy to read."
-            + " Use the available tools: `get_fundamentals` for comprehensive company analysis, `get_balance_sheet`, `get_cashflow`, and `get_income_statement` for specific financial statements."
-            + get_language_instruction(),
-        )
+        if _is_crypto:
+            # --- Crypto path ---
+            instrument_context = build_crypto_context(ticker)
+            tools = [
+                get_crypto_price_data,
+                get_crypto_market_data,
+                get_funding_rate_analysis,
+                get_liquidation_levels,
+            ]
+
+            system_message = (
+                "You are a cryptocurrency fundamental analyst tasked with analyzing "
+                "fundamental information about a cryptocurrency. "
+                "Please write a comprehensive report covering: market capitalisation, "
+                "supply mechanics, token economics, network metrics, adoption indicators, "
+                "and market positioning. "
+                "Focus on crypto-specific metrics: market cap rank, circulating vs total "
+                "supply, trading volume patterns, network activity, developer ecosystem, "
+                "regulatory environment, community strength, and technology fundamentals. "
+                "Provide specific, actionable insights with supporting evidence. "
+                "Make sure to append a Markdown table at the end of the report to organise "
+                "key findings."
+                + get_language_instruction()
+            )
+
+        else:
+            # --- Stock path (original) ---
+            instrument_context = build_instrument_context(ticker)
+            tools = [
+                get_fundamentals,
+                get_balance_sheet,
+                get_cashflow,
+                get_income_statement,
+            ]
+
+            system_message = (
+                "You are a researcher tasked with analyzing fundamental information over "
+                "the past week about a company. Please write a comprehensive report of "
+                "the company's fundamental information such as financial documents, "
+                "company profile, basic company financials, and company financial history "
+                "to gain a full view of the company's fundamental information to inform "
+                "traders. Make sure to include as much detail as possible. Provide "
+                "specific, actionable insights with supporting evidence to help traders "
+                "make informed decisions."
+                + " Make sure to append a Markdown table at the end of the report to "
+                "organize key points in the report, organized and easy to read."
+                + " Use the available tools: `get_fundamentals` for comprehensive company "
+                "analysis, `get_balance_sheet`, `get_cashflow`, and `get_income_statement` "
+                "for specific financial statements."
+                + get_language_instruction()
+            )
 
         prompt = ChatPromptTemplate.from_messages(
             [

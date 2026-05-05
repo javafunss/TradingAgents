@@ -18,6 +18,13 @@ from tradingagents.agents.utils.news_data_tools import (
     get_insider_transactions,
     get_global_news
 )
+from tradingagents.agents.utils.crypto_tools import (
+    is_crypto_symbol,
+    get_crypto_price_data,
+    get_crypto_market_data,
+    get_funding_rate_analysis,
+    get_liquidation_levels,
+)
 
 
 def get_language_instruction() -> str:
@@ -41,6 +48,24 @@ def build_instrument_context(ticker: str) -> str:
         "Use this exact ticker in every tool call, report, and recommendation, "
         "preserving any exchange suffix (e.g. `.TO`, `.L`, `.HK`, `.T`)."
     )
+
+def build_crypto_context(ticker: str) -> str:
+    """Build a context string describing a crypto instrument for agent prompts.
+
+    Args:
+        ticker: Cryptocurrency symbol (e.g. "SOL", "BTC/USDT:USDT").
+
+    Returns:
+        Prompt-friendly context description.
+    """
+    return (
+        f"The cryptocurrency to analyze is `{ticker}`. "
+        "This is a digital asset / cryptocurrency, not a stock. "
+        "Use crypto-specific tools (get_crypto_price_data, "
+        "get_crypto_market_data, get_funding_rate_analysis, "
+        "get_liquidation_levels) when analysis requires market data."
+    )
+
 
 def create_msg_delete():
     def delete_messages(state):

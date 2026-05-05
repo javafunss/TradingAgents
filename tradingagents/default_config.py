@@ -42,9 +42,25 @@ DEFAULT_CONFIG = {
         "technical_indicators": "yfinance",  # Options: alpha_vantage, yfinance
         "fundamental_data": "yfinance",      # Options: alpha_vantage, yfinance
         "news_data": "yfinance",             # Options: alpha_vantage, yfinance
+        "crypto_data": "crypto_fetcher",     # Options: crypto_fetcher
     },
     # Tool-level configuration (takes precedence over category-level)
     "tool_vendors": {
         # Example: "get_stock_data": "alpha_vantage",  # Override category default
     },
+    # ------------------------------------------------------------------
+    # Cryptocurrency / DeFi settings
+    # ------------------------------------------------------------------
+    # Leverage limits for crypto perpetual trading
+    "crypto_default_leverage": 1,
+    "crypto_max_leverage": 5,
+    # Funding rate threshold (%) — signals are flagged when absolute rate
+    # exceeds this value (e.g. 0.01 means 0.01%)
+    "crypto_funding_rate_threshold": 0.01,
+    # Liquidation price buffer — the fraction of distance from liquidation
+    # price below which a position is considered high risk
+    "crypto_liquidation_buffer": 0.2,
+    # Master switch — when False, crypto analysis tools remain available
+    # but are not automatically invoked in the crypto routing logic
+    "crypto_enabled": True,
 }
