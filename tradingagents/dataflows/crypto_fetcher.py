@@ -9,11 +9,15 @@ y_finance.py style, so that agents can read them as structured text.
 Symbol format follows ccxt conventions:
   - Perpetual swap: "SOL/USDT:USDT" (base/quote:settle)
   - Spot: "BTC/USDT" (base/quote)
+
+Proxy support: automatically reads HTTP_PROXY / HTTPS_PROXY / ALL_PROXY
+environment variables (Surge / ClashX compatible).
 """
 
 from __future__ import annotations
 
 import io
+import os
 from datetime import datetime
 from typing import Annotated, Optional
 
@@ -26,8 +30,24 @@ import ccxt
 # ---------------------------------------------------------------------------
 
 
+def _load_proxy() -> str:
+    """Read proxy settings from environment variables.
+
+    Respects the Surge / ClashX / system proxy convention:
+      HTTP_PROXY, HTTPS_PROXY, ALL_PROXY
+    """
+    for var in ["HTTP_PROXY", "http_proxy", "HTTPS_PROXY", "https_proxy",
+                "ALL_PROXY", "all_proxy"]:
+        val = os.environ.get(var)
+        if val:
+            return val
+    return ""
+
+
 def _get_exchange(exchange_id: str = "binance") -> ccxt.Exchange:
-    """Create a ccxt exchange instance.
+    """Create a ccxt exchange instance with proxy and timeout support.
+
+    Automatically picks up HTTP_PROXY / HTTPS_PROXY / ALL_PROXY from env.
 
     Args:
         exchange_id: Exchange identifier (default: "binance").
@@ -36,10 +56,15 @@ def _get_exchange(exchange_id: str = "binance") -> ccxt.Exchange:
         Configured ccxt Exchange instance.
     """
     exchange_class = getattr(ccxt, exchange_id)
-    exchange = exchange_class({
+    config: dict = {
         "enableRateLimit": True,
+        "timeout": 10000,  # 10s timeout to avoid hanging
         "options": {"defaultType": "swap"},  # Prefer perpetual swaps
-    })
+    }
+    proxy_url = _load_proxy()
+    if proxy_url:
+        config["proxies"] = {"https": proxy_url, "http": proxy_url}
+    exchange = exchange_class(config)
     return exchange
 
 
@@ -104,7 +129,6 @@ def get_crypto_perpetual_data(
 
     start_dt = datetime.strptime(start_date, "%Y-%m-%d")
     end_dt = datetime.strptime(end_date, "%Y-%m-%d")
-
     ccxt_symbol = _to_ccxt_symbol(symbol)
     exchange = _get_exchange()
 
